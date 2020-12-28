@@ -1,7 +1,8 @@
 package znet
 
 import (
-	"learning-go/src/zinx/utils"
+	"errors"
+	"io"
 	"learning-go/src/zinx/ziface"
 	"log"
 	"net"
@@ -47,14 +48,41 @@ func (c *Connection) StartReader() {
 
 	for {
 		//读取client的数据到buffer中
-		buf := make([]byte, utils.GlobalObject.MaxPackageSize)
-		//v0.2
-		//cnt, err := c.Conn.Read(buf)
-		_, err := c.Conn.Read(buf)
+		//创建一个拆包对象
+		dp := NewDataPack()
+
+		//读取client的Msg的Head，二进制流
+		headData := make([]byte, dp.GetHeadLen())
+		_, err := io.ReadFull(c.GetTCPConnection(), headData)
 		if err != nil {
-			log.Println("receive buf error", err)
+			log.Println("read msg head error", err)
 			continue
 		}
+		//拆包，得到msgId与dataLen，放入Message对象中
+		msg, err := dp.Unpack(headData)
+		if err != nil {
+			log.Println("unpack error", err)
+			continue
+		}
+		//根据dataLen再次读取 data，放入Message对象的data字段里
+		var data []byte
+		if msg.GetMsgLen() > 0 {
+			data = make([]byte, msg.GetMsgLen())
+			if _, err := io.ReadFull(c.Conn, data); err != nil {
+				log.Println("read msg data error", err)
+				continue
+			}
+		}
+		msg.SetData(data)
+
+		//buf := make([]byte, utils.GlobalObject.MaxPackageSize)
+		////v0.2
+		////cnt, err := c.Conn.Read(buf)
+		//_, err := c.Conn.Read(buf)
+		//if err != nil {
+		//	log.Println("receive buf error", err)
+		//	continue
+		//}
 		////v0.2调用当前连接所绑定的处理api
 		//if err := c.handleAPI(c.Conn, buf, cnt); err != nil {
 		//	log.Println("ConnID", c.ConnID, "handle is error", err)
@@ -65,7 +93,7 @@ func (c *Connection) StartReader() {
 		//得到当前conn的request
 		req := Request{
 			conn: c,
-			data: buf,
+			msg:  msg,
 		}
 		go func(request ziface.IRequest) {
 			c.Router.PreHandle(request)
@@ -110,7 +138,24 @@ func (c *Connection) GetRemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
 
-//发送数据
-func (c *Connection) Send(data []byte) error {
+//发送数据，包装数据成包
+func (c *Connection) SendMsg(msgId uint32, data []byte) error {
+	//如果当前c关闭了
+	if c.isClosed == true {
+		return errors.New("Connection is Closed when sending msg ")
+	}
+	//封包
+	dp := NewDataPack()
+	binaryMsg, err := dp.Pack(NewMessage(msgId, data))
+	if err != nil {
+		log.Println("pack error msg id = , error", msgId, err)
+		return errors.New("Pack error msg ")
+	}
+
+	//发送
+	if _, err := c.Conn.Write(binaryMsg); err != nil {
+		log.Println("[Connection] conn Write msg id , error:", err)
+		return errors.New("conn Write msg error ")
+	}
 	return nil
 }
