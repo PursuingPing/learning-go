@@ -56,13 +56,13 @@ func (c *Connection) StartReader() {
 		_, err := io.ReadFull(c.GetTCPConnection(), headData)
 		if err != nil {
 			log.Println("read msg head error", err)
-			continue
+			break
 		}
 		//拆包，得到msgId与dataLen，放入Message对象中
 		msg, err := dp.Unpack(headData)
 		if err != nil {
 			log.Println("unpack error", err)
-			continue
+			break
 		}
 		//根据dataLen再次读取 data，放入Message对象的data字段里
 		var data []byte
@@ -70,7 +70,7 @@ func (c *Connection) StartReader() {
 			data = make([]byte, msg.GetMsgLen())
 			if _, err := io.ReadFull(c.Conn, data); err != nil {
 				log.Println("read msg data error", err)
-				continue
+				break
 			}
 		}
 		msg.SetData(data)
