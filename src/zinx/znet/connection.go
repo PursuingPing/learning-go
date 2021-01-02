@@ -3,6 +3,7 @@ package znet
 import (
 	"errors"
 	"io"
+	"learning-go/src/zinx/utils"
 	"learning-go/src/zinx/ziface"
 	"log"
 	"net"
@@ -98,12 +99,21 @@ func (c *Connection) StartReader() {
 			conn: c,
 			msg:  msg,
 		}
-		go c.MsgHandler.DoMsgHandler(&req)
+		//v0.7 go c.MsgHandler.DoMsgHandler(&req)
 		//go func(request ziface.IMsgHandler) {
 		//	c.Router.PreHandle(request)
 		//	c.Router.Handle(request)
 		//	c.Router.PostHandle(request)
 		//}(&req)
+
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			//已经开启了workerPool
+			//交给连接池处理
+			c.MsgHandler.SendMsgToTaskQueue(&req)
+		} else {
+			go c.MsgHandler.DoMsgHandler(&req)
+		}
+
 	}
 }
 

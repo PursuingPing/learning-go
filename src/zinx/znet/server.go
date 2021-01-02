@@ -41,6 +41,8 @@ func (s *Server) Start() {
 		utils.GlobalObject.Version, utils.GlobalObject.MaxConn, utils.GlobalObject.MaxPackageSize)
 	//log.Printf("[Start] Server Listenner at IP: %s, Port: %d, is starting\n", s.Ip, s.Port)
 	go func() {
+		//开启workePool
+		s.MsgHandler.StartWorkerPool()
 		//获取一个TCP的addr
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.Ip, s.Port))
 		if err != nil {
