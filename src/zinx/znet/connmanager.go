@@ -31,7 +31,7 @@ func (connMgr *ConnManager) Add(conn ziface.IConnection) {
 
 	//将conn加入到ConnManager中
 	connMgr.connections[conn.GetConnID()] = conn
-	log.Println("[ConnManager] add connection successfully, connID = ", conn.GetConnID())
+	log.Println("[ConnManager] add connection successfully, connID = ", conn.GetConnID(), " Connections = ", connMgr.Len())
 }
 
 //删除连接
@@ -41,7 +41,7 @@ func (connMgr *ConnManager) Remove(conn ziface.IConnection) {
 	defer connMgr.connLock.Unlock()
 
 	delete(connMgr.connections, conn.GetConnID())
-	log.Println("[ConnManager] remove connection successfully, connID = ", conn.GetConnID())
+	log.Println("[ConnManager] remove connection successfully, connID = ", conn.GetConnID(), "Connections = ", connMgr.Len())
 }
 
 //根据连接id获取连接

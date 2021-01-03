@@ -152,6 +152,9 @@ func (c *Connection) Start() {
 	go c.StartReader()
 	//启动写数据业务
 	go c.StartWriter()
+
+	//按照开发者传递进来的 创建连接之后的钩子函数
+	c.TcpServer.CallOnConnStart(c)
 }
 
 func (c *Connection) Stop() {
@@ -161,6 +164,9 @@ func (c *Connection) Stop() {
 		return
 	}
 	c.isClosed = true
+
+	//调用开发者注册的，销毁连接之前需要执行的业务钩子函数
+	c.TcpServer.CallOnConnStop(c)
 	//关闭socket连接
 	err := c.Conn.Close()
 	if err != nil {

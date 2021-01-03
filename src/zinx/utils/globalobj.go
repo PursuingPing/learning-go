@@ -34,7 +34,7 @@ var GlobalObject *GlobalObj
 //加载自定义的参数
 func (g *GlobalObj) Reload() {
 	//读取文件,解析文件
-	data, err := ioutil.ReadFile("src/test/zinxV0.8/conf/zinx.json")
+	data, err := ioutil.ReadFile("src/test/zinxV0.9/conf/zinx.json")
 	if err != nil {
 		panic(err)
 	}

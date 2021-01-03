@@ -22,6 +22,10 @@ type Server struct {
 	MsgHandler ziface.IMsgHandler
 	//该server的连接管理器
 	ConnMgr ziface.IConnManager
+	//该server创建连接之后自动调用的Hook函数
+	OnConnStart func(conn ziface.IConnection)
+	//该server关闭连接之后自动调用的Hook函数
+	OnConnStop func(conn ziface.IConnection)
 }
 
 //v0.2
@@ -72,7 +76,10 @@ func (s *Server) Start() {
 			if s.ConnMgr.Len() >= utils.GlobalObject.MaxConn {
 				//TODO 给client端提示超过最大连接数
 				err := conn.Close()
-				log.Println("close conn error", err)
+				log.Println("[Server] too manny connections")
+				if err != nil {
+					log.Println("close conn error", err)
+				}
 				continue
 			}
 			//tcp连接成功
@@ -135,4 +142,30 @@ func NewServer(name string) ziface.IServer {
 		ConnMgr:    NewConnManager(),
 	}
 	return s
+}
+
+//注册OnConnStart钩子函数方法
+func (s *Server) SetOnConnStart(hookFunc func(connection ziface.IConnection)) {
+	s.OnConnStart = hookFunc
+}
+
+//注册OnConnStop钩子函数方法
+func (s *Server) SetOnConnStop(hookFunc func(connection ziface.IConnection)) {
+	s.OnConnStop = hookFunc
+}
+
+//调用OnConnStart钩子函数方法
+func (s *Server) CallOnConnStart(conn ziface.IConnection) {
+	if s.OnConnStart != nil {
+		log.Println("[Server] Call onConnStart()...")
+		s.OnConnStart(conn)
+	}
+}
+
+//调用OnConnStop钩子函数方法
+func (s *Server) CallOnConnStop(conn ziface.IConnection) {
+	if s.OnConnStop != nil {
+		log.Println("[Server] Call onConnStop()...")
+		s.OnConnStop(conn)
+	}
 }

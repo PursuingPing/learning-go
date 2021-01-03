@@ -12,4 +12,12 @@ type IServer interface {
 	AddRouter(msgID uint32, router IRouter)
 
 	GetConnMgr() IConnManager
+	//注册连接开启之后的钩子函数
+	SetOnConnStart(func(connection IConnection))
+	//注册连接关闭的钩子函数
+	SetOnConnStop(func(connection IConnection))
+	//调用连接开启的钩子函数
+	CallOnConnStart(connection IConnection)
+	//调用连接关闭之前的钩子函数
+	CallOnConnStop(connection IConnection)
 }
